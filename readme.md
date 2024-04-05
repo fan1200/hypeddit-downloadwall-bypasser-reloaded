@@ -19,6 +19,13 @@ This script can be used on Hypeddit's website to bypass download gates encounter
 
 **Note**: Always exercise caution when running userscripts from unknown sources.
 
+## FAQ
+
+Q: Can't pass the email validation step
+A: Please setup another email with a *valid* domain. That domain could be anything, it just needs to exists.
+
+Q: I don't want to end up with accounts full of spam (Spotify, Soundcloud). Is there a workaround?
+A: You could create "dummy"-accounts for the services. That way it doesn't matter that it reposts, comments, follows or even creates playlists.
 
 ## Configuration:
 The script utilizes the `hypedditSettings` object to customize certain parameters. Users can configure these settings according to their preferences:
@@ -37,3 +44,7 @@ window.hypedditSettings = {
     auto_close: true,
     auto_close_timeout_in_ms: 5000
 };
+```
+
+## Disclaimer
+This script relays  heavily on HTML-elements like divs, classes and ids. When the webbuilder changes the page it could break this script. So please be aware of that. Some elements of the script are borrowed. But mostly is created from ground up with vanilla JS. I kind of got inspired by a snippet that was created by Zuko which provided a [userscript](https://gist.github.com/tansautn/d6abfbfcff5d7eb44fdb83f5abc89383) that would autoclick the Soundcloud part.
