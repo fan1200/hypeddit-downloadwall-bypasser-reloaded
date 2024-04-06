@@ -139,14 +139,12 @@
 
     window.handleMultiPortal = function() {
         document.getElementById("step_email").previousElementSibling.click();
+        window.handleEmail();
+    }
 
-        if(document.getElementById("email_address") !== null) {
-            const email = window.hypedditSettings.email;
-            document.getElementById("email_address").setAttribute('value', email);
-            document.getElementById("email_address").value = email;
-        }
-
-        document.getElementById("email_to_downloads_next").click();
+    window.handleEmailSoundCloud = function() {
+        document.getElementById("step_email").previousElementSibling.click();
+        window.handleEmail();
     }
 
 
@@ -168,6 +166,10 @@
 
                     if(stepClassList.contains("sp|ig|email")) {
                         window.handleMultiPortal();
+                    }
+
+                    if(stepClassList.contains("email|sc")) {
+                        window.handleEmailSoundCloud();
                     }
 
                     if (stepClassList.contains("sc")) {
