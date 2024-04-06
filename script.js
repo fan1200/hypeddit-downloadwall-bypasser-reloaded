@@ -137,6 +137,18 @@
         document.getElementById("fbCarouselSocialSection").click();
     }
 
+    window.handleMultiPortal = function() {
+        document.getElementById("step_email").previousElementSibling.click();
+
+        if(document.getElementById("email_address") !== null) {
+            const email = window.hypedditSettings.email;
+            document.getElementById("email_address").setAttribute('value', email);
+            document.getElementById("email_address").value = email;
+        }
+
+        document.getElementById("email_to_downloads_next").click();
+    }
+
 
     const targetNode = document.getElementById("myCarousel");
 
@@ -153,6 +165,10 @@
                 if(stepContent !== prevStepContent) {
 
                     const stepClassList = stepContent.classList;
+
+                    if(stepClassList.contains("sp|ig|email")) {
+                        window.handleMultiPortal();
+                    }
 
                     if (stepClassList.contains("sc")) {
                         window.handleSoundCloud();
