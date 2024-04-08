@@ -147,6 +147,11 @@
         window.handleEmail();
     }
 
+    window.handleSoundCloudYoutube = function() {
+        document.getElementById("step_yt").previousElementSibling.click();
+        window.handleYoutube();
+    }
+
 
     const targetNode = document.getElementById("myCarousel");
 
@@ -170,6 +175,10 @@
 
                     if(stepClassList.contains("email|sc")) {
                         window.handleEmailSoundCloud();
+                    }
+
+                    if(stepClassList.contains("sc|yt")) {
+                        window.handleSoundCloudYoutube();
                     }
 
                     if (stepClassList.contains("sc")) {
