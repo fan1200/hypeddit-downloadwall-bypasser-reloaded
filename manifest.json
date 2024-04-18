@@ -1,0 +1,23 @@
+{
+   "manifest_version": 3,
+   "name": "Hypeddit Bypasser 2k24",
+   "version": "2024.04.04",
+   "description": "Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!",
+   "author": "PINGVI",
+   "icons": {
+     "128": "fuck.png"
+   },
+   "content_scripts": [
+     {
+       "matches": [
+         "https://hypeddit.com/track/*",
+         "https://secure.soundcloud.com/connect*"
+       ],
+       "run_at": "document_end",
+       "js": ["content.js"]
+     }
+   ],
+   "permissions": ["activeTab"],
+   "host_permissions": ["https://hypeddit.com/*", "https://secure.soundcloud.com/*"]
+ }
+ 
