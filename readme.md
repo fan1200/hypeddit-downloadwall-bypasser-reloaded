@@ -11,7 +11,7 @@ To use this script effectively, users must ensure the following:
 This script can be used on Hypeddit's website to bypass download gates encountered when attempting to download tracks. It targets specific URLs related to Hypeddit tracks and SoundCloud login pages, ensuring seamless navigation through the download process.
 
 ## Installation:
-1. Download the repository from https://github.dev/malakutska/hypeddit-downloadwall-bypasser-reloaded.
+1. Download the repository from https://github.com/malakutska/hypeddit-downloadwall-bypasser-reloaded.
 2. Unpack the contents.
 3. Go to "Extensions" in Chrome settings.
 4. Load the unpacked folder.
