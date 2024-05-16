@@ -152,7 +152,11 @@
         window.handleYoutube();
     }
 
-
+    window.handleDonate = function() {
+        document.getElementById("step_dn").previousElementSibling.click();
+        document.getElementById("donation_next").click();
+    }
+    
     const targetNode = document.getElementById("myCarousel");
 
     const config = { attributes: true, childList: true, subtree: true };
@@ -180,6 +184,10 @@
                     if(stepClassList.contains("sc|yt")) {
                         window.handleSoundCloudYoutube();
                     }
+
+                    if(stepClassList.contains("dn")) {
+                        window.handleDonate();
+                    }                    
 
                     if (stepClassList.contains("sc")) {
                         window.handleSoundCloud();
