@@ -4,7 +4,7 @@
 // @version      2024-07-24
 // @description  Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!
 // @author       fan1200
-// @match        https://hypeddit.com/track/*
+// @match        https://hypeddit.com/*
 // @match        https://secure.soundcloud.com/connect*
 // @match        https://secure.soundcloud.com/authorize*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hypeddit.com
