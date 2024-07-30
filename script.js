@@ -5,6 +5,8 @@
 // @description  Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!
 // @author       fan1200
 // @match        https://hypeddit.com/*
+// @match        https://pumpyoursound.com/f/*
+// @match        https://pumpyoursound.com/?do=soundConnectAuth*
 // @match        https://secure.soundcloud.com/connect*
 // @match        https://secure.soundcloud.com/authorize*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hypeddit.com
@@ -21,6 +23,48 @@
         auto_close: true,
         auto_close_timeout_in_ms: 5000,
     }
+  window._pumpUrSoundHandler = function (){
+    const steps = $('.fanpageDownload__item');
+    if (!window.hasOwnProperty('isPumpHandled')){
+      window.isPumpHandled = false;
+    }
+    steps.each((i, e) => {
+      if (window.isPumpHandled){
+        return;
+      }
+      const curEl = $(e);
+      const curStep = curEl.find('.fangateStep.state');
+      const stepLabel = curStep.attr('class').split(' ').filter(v => v.indexOf('fangateStep--') !== -1).pop().replace('fangateStep--', '');
+      console.info(curStep, stepLabel, curEl);
+      if (!curEl.hasClass('pull-left') && !curEl.hasClass('done')) {
+        switch (stepLabel) {
+          case 'soundcloud':
+          case 'facebook':
+            // TODO : use post message API to communicate with child windows.
+            // TODO sessionStorage set value to check the connect process
+            // TODO: facebook and youtube does not require any validation. So just close it's modal
+            curEl.find('.socBtn').trigger('click');
+            break;
+          case 'comment':
+            curStep.find('input[name="fangate_comment"]').val(window.hypedditSettings.comment);
+            curStep.find('.btn.fangatex__sendComment').trigger('click');
+            break;
+        }
+        window.isPumpHandled = true;
+      }
+    });
+  }
+    if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')){
+      window._pumpUrSoundHandler();
+      // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
+      return;
+    }
+
+  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')){
+    window.close();
+    // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
+    return;
+  }
 
     if (window.location.host.includes("soundcloud.com")) {
         const button = document.querySelector('button[type="submit"]')
@@ -154,6 +198,8 @@
         document.getElementById("step_dn").previousElementSibling.click()
         document.getElementById("donation_next").click()
     }
+
+
 
     const targetNode = document.getElementById("myCarousel")
 
