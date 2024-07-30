@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Hypeddit DownloadWallBypasser 2k24
+// @name         Hypeddit, PumpYourSound DownloadWallBypasser 2k24
 // @namespace    http://tampermonkey.net/
-// @version      2024-07-24
+// @version      2024-07-30
 // @description  Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!
-// @author       fan1200
+// @author       fan1200, Zuko <tansautn@gmail.com>
 // @match        https://hypeddit.com/*
 // @match        https://pumpyoursound.com/f/*
 // @match        https://pumpyoursound.com/?do=soundConnectAuth*
