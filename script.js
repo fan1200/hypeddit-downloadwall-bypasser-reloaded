@@ -14,271 +14,312 @@
 // ==/UserScript==
 
 ;(function () {
-    "use strict"
+  "use strict"
 
-    window.hypedditSettings = {
-        email: "jouch@hippo.com",
-        name: "Jojo",
-        comment: "Nice!",
-        auto_close: true,
-        auto_close_timeout_in_ms: 5000,
-    }
-  window._pumpUrSoundHandler = function (){
+  window.hypedditSettings = {
+    email: "jouch@hippo.com",
+    name: "Jojo",
+    comment: "Nice!",
+    auto_close: true,
+    auto_close_timeout_in_ms: 5000,
+  }
+  const pumpUrSoundHandler = function (){
     const steps = $('.fanpageDownload__item');
     if (!window.hasOwnProperty('isPumpHandled')){
       window.isPumpHandled = false;
     }
     steps.each((i, e) => {
       if (window.isPumpHandled){
+        console.warn('Pump handled, abort');
         return;
       }
       const curEl = $(e);
       const curStep = curEl.find('.fangateStep.state');
-      const stepLabel = curStep.attr('class').split(' ').filter(v => v.indexOf('fangateStep--') !== -1).pop().replace('fangateStep--', '');
-      console.info(curStep, stepLabel, curEl);
-      if (!curEl.hasClass('pull-left') && !curEl.hasClass('done')) {
+      let stepLabel;
+      if (curStep.hasClass('pull-left')){
+        return; // continue
+      }
+      if (!curStep.hasClass('done')) {
+        stepLabel = curStep.attr('class').split(' ').filter(v => v.includes('fangateStep--')).pop().replace('fangateStep--', '');
+        console.info(stepLabel, curStep, curStep.hasClass('done') ,curStep.hasClass('pull-left'));
         switch (stepLabel) {
           case 'soundcloud':
           case 'facebook':
             // TODO : use post message API to communicate with child windows.
             // TODO sessionStorage set value to check the connect process
             // TODO: facebook and youtube does not require any validation. So just close it's modal
-            curEl.find('.socBtn').trigger('click');
+            window.setTimeout(() => {
+              curEl.find('.socBtn').trigger('click');
+              console.info('trigger click for' + stepLabel);
+            }, 200);
             break;
           case 'comment':
-            curStep.find('input[name="fangate_comment"]').val(window.hypedditSettings.comment);
-            curStep.find('.btn.fangatex__sendComment').trigger('click');
+              let isDomLoaded = false;
+              $(document).ready(() => {
+                isDomLoaded = true
+              })
+              const commentPump = () => {
+                console.warn(!document.querySelector('#soundcloud-api') || !isDomLoaded, !document.querySelector('#soundcloud-api'), !isDomLoaded);
+                if (!document.querySelector('#soundcloud-api') || !isDomLoaded) {
+                  window.setTimeout(commentPump, 300);
+                  console.info('no SC api or dom not ready yet, try in next 200 ms');
+                  return;
+                }
+                curEl.find('input[name="fangate_comment"]').val(window.hypedditSettings.comment);
+                const button = curEl.find('.btn.fangatex__sendComment').first();
+                button.trigger('click');
+                console.info('trigger Comment click for' + stepLabel);
+
+
+                // const scConn = SC.connect(function () {
+                //   $.nette.ajax({
+                //     url: "/?do=mySoundcloudAccessToken"
+                //   }).success(function (e) {
+                //     console.log(e), accessToken = e, console.log(e), $.nette.ajax({
+                //       url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
+                //     })
+                //   })
+                // });
+                sessionStorage.setItem('scConnDialog', (new URLSearchParams(button.data('href').split('?')[1]).get('fangateId')));
+              }
+              window.setTimeout(commentPump, 300);
             break;
         }
         window.isPumpHandled = true;
       }
     });
   }
-    if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')){
-      window._pumpUrSoundHandler();
-      // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
-      return;
-    }
+  window._pumpUrSoundHandler = pumpUrSoundHandler;
 
   if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')){
-    window.close();
+    console.info('Run pumpUrSoundHandler');
+    pumpUrSoundHandler();
     // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
     return;
   }
 
-    if (window.location.host.includes("soundcloud.com")) {
+  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/soundConnectAuth/')){
+    console.info(sessionStorage.getItem('scConnDialog'));
+    console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
+    window.close();
+    console.info('pump connect closed');
+    // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
+    return;
+  }
+
+  if (window.location.host.includes("soundcloud.com")) {
+    const button = document.querySelector('button[type="submit"]')
+
+    if (button) {
+      button.click()
+    } else {
+      let isDone = false
+      const maxTries = 10
+      let cou = 0
+
+      const retryClick = () => {
         const button = document.querySelector('button[type="submit"]')
 
         if (button) {
-            button.click()
+          button.click()
+          isDone = true
         } else {
-            let isDone = false
-            const maxTries = 10
-            let cou = 0
-
-            const retryClick = () => {
-                const button = document.querySelector('button[type="submit"]')
-
-                if (button) {
-                    button.click()
-                    isDone = true
-                } else {
-                    cou++
-                    if (cou < maxTries) {
-                        setTimeout(retryClick, 200)
-                    }
-                }
-            }
-
+          cou++
+          if (cou < maxTries) {
             setTimeout(retryClick, 200)
+          }
         }
+      }
+
+      setTimeout(retryClick, 200)
+    }
+  }
+
+  window.handleFollowOptions = function (containerElementId, skipperId) {
+    if (document.getElementById(containerElementId) !== null) {
+      document
+      .getElementById(containerElementId)
+      .querySelectorAll("a")
+      .forEach((accountItem) => {
+        accountItem.classList.remove("undone")
+        accountItem.classList.add("done")
+      })
+
+      document.getElementById(skipperId).click()
+    }
+  }
+
+  window.handleSoundCloud = function () {
+    console.log("SOUNDCLOUD")
+
+    const comment = window.hypedditSettings.comment
+
+    if (document.getElementById("sc_comment_text") !== null) {
+      document
+      .getElementById("sc_comment_text")
+      .setAttribute("value", comment)
     }
 
-    window.handleFollowOptions = function (containerElementId, skipperId) {
-        if (document.getElementById(containerElementId) !== null) {
-            document
-                .getElementById(containerElementId)
-                .querySelectorAll("a")
-                .forEach((accountItem) => {
-                    accountItem.classList.remove("undone")
-                    accountItem.classList.add("done")
-                })
+    if (document.getElementById("step_sc") !== null) {
+      document.getElementById("step_sc").querySelector("a").click()
+    }
+  }
 
-            document.getElementById(skipperId).click()
+  window.handleInstagram = function () {
+    console.log("INSTA")
+    window.handleFollowOptions("instagram_status", "skipper_ig_next")
+  }
+
+  window.handleYoutube = function () {
+    console.log("YOUTUBE")
+    window.handleFollowOptions("youtube_status", "skipper_yt_next")
+  }
+
+  window.handleSpotify = function () {
+    console.log("SPOTIFY")
+    document.getElementById("step_sp").querySelector("a").click()
+  }
+
+  window.handleDownload = function () {
+    console.log("DOWNLOAD")
+    downloadUnlimitedGate()
+
+    if (window.hypedditSettings.auto_close) {
+      const timeout = window.hypedditSettings.auto_close_timeout_in_ms
+      window.setTimeout(function () {
+        close()
+      }, timeout)
+    }
+  }
+
+  window.handleEmail = function () {
+    const email = window.hypedditSettings.email
+    const name = window.hypedditSettings.name
+
+    if (document.getElementById("email_name") !== null) {
+      document.getElementById("email_name").setAttribute("value", name)
+    }
+
+    if (document.getElementById("email_address") !== null) {
+      document
+      .getElementById("email_address")
+      .setAttribute("value", email)
+      document.getElementById("email_address").value = email
+    }
+
+    document.getElementById("email_to_downloads_next").click()
+  }
+
+  window.handleTikTok = function () {
+    console.log("TIKTOK")
+    window.handleFollowOptions("tiktok_status", "skipper_tk_next")
+  }
+
+  window.handleFacebook = function () {
+    console.log("FACEBOOK")
+    document.getElementById("fbCarouselSocialSection").click()
+  }
+
+  window.handleMultiPortal = function () {
+    document.getElementById("step_email").previousElementSibling.click()
+    window.handleEmail()
+  }
+
+  window.handleEmailSoundCloud = function () {
+    document.getElementById("step_email").previousElementSibling.click()
+    window.handleEmail()
+  }
+
+  window.handleSoundCloudYoutube = function () {
+    document.getElementById("step_yt").previousElementSibling.click()
+    window.handleYoutube()
+  }
+
+  window.handleDonate = function () {
+    document.getElementById("step_dn").previousElementSibling.click()
+    document.getElementById("donation_next").click()
+  }
+
+
+
+  const targetNode = document.getElementById("myCarousel")
+
+  const config = { attributes: true, childList: true, subtree: true }
+
+  let prevStepContent = null
+  const callback = (mutationList, observer) => {
+    for (const mutation of mutationList) {
+      if (mutation.type === "attributes") {
+        const stepContent = document.querySelector(
+          ".fangate-slider-content:not(.move-left)"
+        )
+
+        if (stepContent !== prevStepContent) {
+          const stepClassList = stepContent.classList
+
+          if (stepClassList.contains("sp|ig|email")) {
+            window.handleMultiPortal()
+          }
+
+          if (stepClassList.contains("email|sc")) {
+            window.handleEmailSoundCloud()
+          }
+
+          if (stepClassList.contains("sc|yt")) {
+            window.handleSoundCloudYoutube()
+          }
+
+          if (stepClassList.contains("dn")) {
+            window.handleDonate()
+          }
+
+          if (stepClassList.contains("sc")) {
+            window.handleSoundCloud()
+          }
+
+          if (stepClassList.contains("ig")) {
+            window.handleInstagram()
+          }
+
+          if (stepClassList.contains("dw")) {
+            window.handleDownload()
+          }
+
+          if (stepClassList.contains("yt")) {
+            window.handleYoutube()
+          }
+
+          if (stepClassList.contains("sp")) {
+            window.handleSpotify()
+          }
+
+          if (stepClassList.contains("email")) {
+            window.handleEmail()
+          }
+
+          if (stepClassList.contains("tk")) {
+            window.handleTikTok()
+          }
+
+          if (stepClassList.contains("fb")) {
+            window.handleFacebook()
+          }
         }
+
+        prevStepContent = stepContent
+      }
     }
+  }
 
-    window.handleSoundCloud = function () {
-        console.log("SOUNDCLOUD")
+  const observer = new MutationObserver(callback)
 
-        const comment = window.hypedditSettings.comment
+  observer.observe(targetNode, config)
 
-        if (document.getElementById("sc_comment_text") !== null) {
-            document
-                .getElementById("sc_comment_text")
-                .setAttribute("value", comment)
-        }
-
-        if (document.getElementById("step_sc") !== null) {
-            document.getElementById("step_sc").querySelector("a").click()
-        }
+  const _start = () => {
+    if (document.getElementById("downloadProcess") !== null) {
+      document.getElementById("downloadProcess").click()
     }
+  }
 
-    window.handleInstagram = function () {
-        console.log("INSTA")
-        window.handleFollowOptions("instagram_status", "skipper_ig_next")
-    }
-
-    window.handleYoutube = function () {
-        console.log("YOUTUBE")
-        window.handleFollowOptions("youtube_status", "skipper_yt_next")
-    }
-
-    window.handleSpotify = function () {
-        console.log("SPOTIFY")
-        document.getElementById("step_sp").querySelector("a").click()
-    }
-
-    window.handleDownload = function () {
-        console.log("DOWNLOAD")
-        downloadUnlimitedGate()
-
-        if (window.hypedditSettings.auto_close) {
-            const timeout = window.hypedditSettings.auto_close_timeout_in_ms
-            window.setTimeout(function () {
-                close()
-            }, timeout)
-        }
-    }
-
-    window.handleEmail = function () {
-        const email = window.hypedditSettings.email
-        const name = window.hypedditSettings.name
-
-        if (document.getElementById("email_name") !== null) {
-            document.getElementById("email_name").setAttribute("value", name)
-        }
-
-        if (document.getElementById("email_address") !== null) {
-            document
-                .getElementById("email_address")
-                .setAttribute("value", email)
-            document.getElementById("email_address").value = email
-        }
-
-        document.getElementById("email_to_downloads_next").click()
-    }
-
-    window.handleTikTok = function () {
-        console.log("TIKTOK")
-        window.handleFollowOptions("tiktok_status", "skipper_tk_next")
-    }
-
-    window.handleFacebook = function () {
-        console.log("FACEBOOK")
-        document.getElementById("fbCarouselSocialSection").click()
-    }
-
-    window.handleMultiPortal = function () {
-        document.getElementById("step_email").previousElementSibling.click()
-        window.handleEmail()
-    }
-
-    window.handleEmailSoundCloud = function () {
-        document.getElementById("step_email").previousElementSibling.click()
-        window.handleEmail()
-    }
-
-    window.handleSoundCloudYoutube = function () {
-        document.getElementById("step_yt").previousElementSibling.click()
-        window.handleYoutube()
-    }
-
-    window.handleDonate = function () {
-        document.getElementById("step_dn").previousElementSibling.click()
-        document.getElementById("donation_next").click()
-    }
-
-
-
-    const targetNode = document.getElementById("myCarousel")
-
-    const config = { attributes: true, childList: true, subtree: true }
-
-    let prevStepContent = null
-    const callback = (mutationList, observer) => {
-        for (const mutation of mutationList) {
-            if (mutation.type === "attributes") {
-                const stepContent = document.querySelector(
-                    ".fangate-slider-content:not(.move-left)"
-                )
-
-                if (stepContent !== prevStepContent) {
-                    const stepClassList = stepContent.classList
-
-                    if (stepClassList.contains("sp|ig|email")) {
-                        window.handleMultiPortal()
-                    }
-
-                    if (stepClassList.contains("email|sc")) {
-                        window.handleEmailSoundCloud()
-                    }
-
-                    if (stepClassList.contains("sc|yt")) {
-                        window.handleSoundCloudYoutube()
-                    }
-
-                    if (stepClassList.contains("dn")) {
-                        window.handleDonate()
-                    }
-
-                    if (stepClassList.contains("sc")) {
-                        window.handleSoundCloud()
-                    }
-
-                    if (stepClassList.contains("ig")) {
-                        window.handleInstagram()
-                    }
-
-                    if (stepClassList.contains("dw")) {
-                        window.handleDownload()
-                    }
-
-                    if (stepClassList.contains("yt")) {
-                        window.handleYoutube()
-                    }
-
-                    if (stepClassList.contains("sp")) {
-                        window.handleSpotify()
-                    }
-
-                    if (stepClassList.contains("email")) {
-                        window.handleEmail()
-                    }
-
-                    if (stepClassList.contains("tk")) {
-                        window.handleTikTok()
-                    }
-
-                    if (stepClassList.contains("fb")) {
-                        window.handleFacebook()
-                    }
-                }
-
-                prevStepContent = stepContent
-            }
-        }
-    }
-
-    const observer = new MutationObserver(callback)
-
-    observer.observe(targetNode, config)
-
-    const _start = () => {
-        if (document.getElementById("downloadProcess") !== null) {
-            document.getElementById("downloadProcess").click()
-        }
-    }
-
-    window.setTimeout(_start, 800)
+  window.setTimeout(_start, 800)
 })()
