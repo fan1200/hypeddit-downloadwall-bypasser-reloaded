@@ -23,66 +23,71 @@
     auto_close: true,
     auto_close_timeout_in_ms: 5000,
   }
-  const pumpUrSoundHandler = function (){
-    const steps = $('.fanpageDownload__item');
-    if (!window.hasOwnProperty('isPumpHandled')){
+  const pumpUrSoundHandler = function () {
+    const steps = document.querySelectorAll('.fanpageDownload__item');
+    if (!window.hasOwnProperty('isPumpHandled')) {
       window.isPumpHandled = false;
     }
-    steps.each((i, e) => {
-      if (window.isPumpHandled){
+    steps.forEach((e) => {
+      if (window.isPumpHandled) {
         console.warn('Pump handled, abort');
         return;
       }
-      const curEl = $(e);
-      const curStep = curEl.find('.fangateStep.state');
+      const curEl = e;
+      const curStep = curEl.querySelector('.fangateStep.state');
       let stepLabel;
-      if (curStep.hasClass('pull-left')){
+      if (curStep.classList.contains('pull-left')) {
         return; // continue
       }
-      if (!curStep.hasClass('done')) {
-        stepLabel = curStep.attr('class').split(' ').filter(v => v.includes('fangateStep--')).pop().replace('fangateStep--', '');
-        console.info(stepLabel, curStep, curStep.hasClass('done') ,curStep.hasClass('pull-left'));
+      if (!curStep.classList.contains('done')) {
+        stepLabel = Array.from(curStep.classList)
+        .find(v => v.includes('fangateStep--'))
+        .replace('fangateStep--', '');
+        console.info(stepLabel, curStep, curStep.classList.contains('done'), curStep.classList.contains('pull-left'));
         switch (stepLabel) {
           case 'soundcloud':
           case 'facebook':
             // TODO : use post message API to communicate with child windows.
-            // TODO sessionStorage set value to check the connect process
-            // TODO: facebook and youtube does not require any validation. So just close it's modal
+            // TODO : sessionStorage set value to check the connect process
+            // TODO : facebook and youtube does not require any validation. So just close it's modal
             window.setTimeout(() => {
-              curEl.find('.socBtn').trigger('click');
+              curEl.querySelector('.socBtn').click();
               console.info('trigger click for' + stepLabel);
             }, 200);
             break;
           case 'comment':
-              let isDomLoaded = false;
-              $(document).ready(() => {
-                isDomLoaded = true
-              })
-              const commentPump = () => {
-                console.warn(!document.querySelector('#soundcloud-api') || !isDomLoaded, !document.querySelector('#soundcloud-api'), !isDomLoaded);
-                if (!document.querySelector('#soundcloud-api') || !isDomLoaded) {
-                  window.setTimeout(commentPump, 300);
-                  console.info('no SC api or dom not ready yet, try in next 200 ms');
-                  return;
-                }
-                curEl.find('input[name="fangate_comment"]').val(window.hypedditSettings.comment);
-                const button = curEl.find('.btn.fangatex__sendComment').first();
-                button.trigger('click');
-                console.info('trigger Comment click for' + stepLabel);
-
-
-                // const scConn = SC.connect(function () {
-                //   $.nette.ajax({
-                //     url: "/?do=mySoundcloudAccessToken"
-                //   }).success(function (e) {
-                //     console.log(e), accessToken = e, console.log(e), $.nette.ajax({
-                //       url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
-                //     })
-                //   })
-                // });
-                sessionStorage.setItem('scConnDialog', (new URLSearchParams(button.data('href').split('?')[1]).get('fangateId')));
+            let isDomLoaded = false;
+            $(document).ready(() => {
+              isDomLoaded = true
+            });
+            // FIXME : why addEventListener not work?. Handler event not get called by any thread ?
+            // document.addEventListener('DOMContentLoaded', () => {
+            //   isDomLoaded = true;
+            // });
+            const commentPump = () => {
+              console.warn(!document.querySelector('#soundcloud-api') || !isDomLoaded, !document.querySelector('#soundcloud-api'), !isDomLoaded);
+              if (!document.querySelector('#soundcloud-api') || !isDomLoaded) {
+                window.setTimeout(commentPump, 300);
+                console.info('no SC api or dom not ready yet, try in next 200 ms');
+                return;
               }
-              window.setTimeout(commentPump, 300);
+              curEl.querySelector('input[name="fangate_comment"]').value = window.hypedditSettings.comment;
+              const button = curEl.querySelector('.btn.fangatex__sendComment');
+              button.click();
+              console.info('trigger Comment click for' + stepLabel);
+              // Please don't remove this. Need to consider it later.
+              // const scConn = SC.connect(function () {
+              //   $.nette.ajax({
+              //     url: "/?do=mySoundcloudAccessToken"
+              //   }).success(function (e) {
+              //     console.log(e), accessToken = e, console.log(e), $.nette.ajax({
+              //       url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
+              //     })
+              //   })
+              // });
+              sessionStorage.setItem('scConnDialog', (new URLSearchParams(button.dataset.href.split('?')[1]).get('fangateId')));
+            }
+            window.setTimeout(commentPump, 300);
             break;
         }
         window.isPumpHandled = true;
@@ -91,19 +96,17 @@
   }
   window._pumpUrSoundHandler = pumpUrSoundHandler;
 
-  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')){
+  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')) {
     console.info('Run pumpUrSoundHandler');
     pumpUrSoundHandler();
-    // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
     return;
   }
 
-  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/soundConnectAuth/')){
+  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/soundConnectAuth/')) {
     console.info(sessionStorage.getItem('scConnDialog'));
     console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
     window.close();
     console.info('pump connect closed');
-    // window.addEventListener('DOMContentLoaded', () => window._pumpUrSoundHandler());
     return;
   }
 
