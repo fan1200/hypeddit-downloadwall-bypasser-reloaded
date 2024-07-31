@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hypeddit, PumpYourSound DownloadWallBypasser 2k24
 // @namespace    http://tampermonkey.net/
-// @version      1.1-rc51dh
+// @version      1.1-rcsfrC
 // @description  Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!
 // @author       fan1200, Zuko <tansautn@gmail.com>
 // @match        https://hypeddit.com/*
@@ -21,11 +21,93 @@
     auto_close: true,
     auto_close_timeout_in_ms: 5000,
   }
-  console.info('work ?');
+  if (localStorage.getItem('hypedditSettings')) {
+    window.hypedditSettings = JSON.parse(localStorage.getItem('hypedditSettings'));
+  }
   const pumpUrSoundHandler = function () {
     const steps = document.querySelectorAll('.fanpageDownload__item');
+    let isDomLoaded = false;
+    let countStepDone = 0;
     if (!window.hasOwnProperty('isPumpHandled')) {
       window.isPumpHandled = false;
+    }
+    $(document).ready(() => {
+      console.info('dom ready for');
+      isDomLoaded = true
+    });
+    // FIXME : why addEventListener not work?. Handler event not called by any thread ?
+    document.addEventListener('DOMContentLoaded', () => {
+      // isDomLoaded = true;
+      console.info('DOMContentLoaded');
+
+    });
+    // Alternate method for anyone got "window.onpener" is Null - Like me :(
+    // It's mostly caused by some blocking extension or related
+    function simulateConnectUsingSdk() {
+      try {
+        if (localStorage.getItem('scConnDialog')) {
+          return ;
+        }
+        localStorage.removeItem('isPumpConnectDone');
+        const j =  SC.connect(callbackForSc);
+        localStorage.setItem('scConnDialog', j.id);
+        return j;
+      } catch (e) {
+        window.setTimeout(simulateConnectUsingSdk, 300);
+        return null;
+      }
+    }
+    function callbackForSc() {
+      console.info('on callback for connect', this, arguments);
+      let doneCond = localStorage.getItem('isPumpConnectDone');
+      console.info('check connect done in callback', doneCond);
+      if (!doneCond) {
+        window.setTimeout(callbackForSc, 300);
+      }
+      if (doneCond) {
+        // Only current step have attribute data-href. So this simple selector is enough
+        const t = document.querySelector('[data-href]');
+        let accessToken;
+        // Taken from Pump's main.js
+        $.nette.ajax({
+          url: "/?do=mySoundcloudAccessToken"
+        }).success(function (e) {
+          const urlGet = t.dataset.href;
+          const params = new URLSearchParams(urlGet.split('?')[1]);
+          params.set('accessToken', accessToken);
+          params.set('text', window.hypedditSettings.comment);
+          $.nette.ajax({
+            url: urlGet.split('?')[0] + '?' + params.toString()
+          }).then(function (e) {
+            console.info('done');
+            console.error(e);
+            // What should here ?
+            // window.location.reload();
+          });
+        });
+        localStorage.removeItem('isPumpConnectDone');
+      }
+    }
+    function alternateMethodForPump(){
+      // will be called from connect to like & connect to comment
+      console.warn('Run alternateMethodForPump');
+      clearLocalStoredVals();
+      simulateConnectUsingSdk();
+      let itvId = window.setInterval(() => {
+        let doneCond = localStorage.getItem('isPumpConnectDone');
+        if (doneCond) {
+          console.info('call connect callback');
+          // SC.connectCallback(localStorage.getItem('scConnDialog'));
+          callbackForSc();
+          clearInterval(itvId);
+          console.info('interval stopped', doneCond);
+          return;
+        }
+      }, 500);
+    }
+    function clearLocalStoredVals(){
+      localStorage.removeItem('scConnDialog');
+      localStorage.removeItem('isPumpConnectDone');
     }
     steps.forEach((e) => {
       if (window.isPumpHandled) {
@@ -35,10 +117,15 @@
       const curEl = e;
       const curStep = curEl.querySelector('.fangateStep.state');
       let stepLabel;
-      if (curStep.classList.contains('pull-left')) {
+      if (curStep.classList.contains('pull-left') || curStep.classList.contains('done')) {
+        countStepDone++;
         return; // continue
       }
       if (!curStep.classList.contains('done')) {
+        if (localStorage.getItem('useAlternate')) {
+          console.warn('Alternate method for pump will used');
+        }
+
         stepLabel = Array.from(curStep.classList)
         .find(v => v.includes('fangateStep--'))
         .replace('fangateStep--', '');
@@ -47,26 +134,28 @@
           case 'soundcloud':
           case 'facebook':
             // TODO : use post message API to communicate with child windows.
-            // TODO : sessionStorage set value to check the connect process
+            // TODO : sessionStorage set value to check the connect process ?? - still does not work between windows
             // TODO : youtube does not require any validation. So just close it's modal
             // TODO : facebook need what to mark as done?, are okay when we simulate the form submit?
-            window.setTimeout(() => {
-              curEl.querySelector('.socBtn').click();
-              console.info('trigger click for' + stepLabel);
-            }, 200);
+            window.setTimeout((function pumpSimpleStepHandler() {
+              return () => {
+                console.warn(!document.querySelector('#soundcloud-api') || !isDomLoaded, !document.querySelector('#soundcloud-api'), !isDomLoaded);
+                if (!document.querySelector('#soundcloud-api') || !isDomLoaded || !SC) {
+                  window.setTimeout(pumpSimpleStepHandler(), 300);
+                  console.info('no SC api or dom not ready yet, try in next 300 ms');
+                  return;
+                }
+                if (!localStorage.getItem('useAlternate')) {
+                  console.info('button is : ', curEl.querySelector('.socBtn'));
+                  curEl.querySelector('.socBtn').click();
+                  console.info('trigger click for ' + stepLabel);
+                } else {
+                  alternateMethodForPump();
+                }
+              };
+            })(), 300);
             break;
           case 'comment':
-            let isDomLoaded = false;
-            $(document).ready(() => {
-              console.info('dom ready for' + stepLabel);
-              isDomLoaded = true
-            });
-            // FIXME : why addEventListener not work?. Handler event not get called by any thread ?
-            document.addEventListener('DOMContentLoaded', () => {
-              // isDomLoaded = true;
-              console.info('DOMContentLoaded ' + stepLabel);
-
-            });
             const commentPump = () => {
               console.warn(!document.querySelector('#soundcloud-api') || !isDomLoaded, !document.querySelector('#soundcloud-api'), !isDomLoaded);
               if (!document.querySelector('#soundcloud-api') || !isDomLoaded || !SC) {
@@ -74,53 +163,16 @@
                 console.info('no SC api or dom not ready yet, try in next 200 ms');
                 return;
               }
-              // sessionStorage.removeItem('scConnDialog');
-              sessionStorage.removeItem('isPumpConnectDone');
+              // localStorage.setItem('pumpFanGateId', (new URLSearchParams(button.dataset.href.split('?')[1]).get('fangateId')));
               curEl.querySelector('input[name="fangate_comment"]').value = window.hypedditSettings.comment;
               const button = curEl.querySelector('.btn.fangatex__sendComment');
-              // button.click();
-              console.info('trigger Comment click for' + stepLabel);
-              // Please don't remove this. Need to consider as a replacement for click. But later.
-              const scConn = () => {
-                const val = SC.connect(function () {
-                  console.info('on callback for connect', this, arguments);
-                  let doneCond = sessionStorage.getItem('isPumpConnectDone');
-                  if (!doneCond) {
-                    window.setTimeout(scConn, 300);
-                  }
-                  if (doneCond){
-                    const t = button;
-                    let accessToken;
-                    // Taken from Pump's main.js
-                    $.nette.ajax({
-                      url: "/?do=mySoundcloudAccessToken"
-                    }).success(function (e) {
-                      console.log(e);
-                      accessToken = e;
-                      console.log(e);
-                      $.nette.ajax({
-                        url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
-                      });
-                      console.error('doneeeee');
-                    });
-                    sessionStorage.removeItem('isPumpConnectDone');
-                  }
-                });
-              };
-              console.info(scConn);
-              let itvId = window.setInterval(() => {
-                let doneCond = sessionStorage.getItem('isPumpConnectDone');
-                console.info('doneCond interval', doneCond);
-                if (doneCond) {
-                  console.info('call connect callback');
-                  SC.connectCallback();
-                  clearInterval(itvId);
-                  console.info('remove doneCond', doneCond);
-                  return;
-                }
-              }, 500);
-              // sessionStorage.setItem('scConnDialog', scConn.id);
-              sessionStorage.setItem('pumpFanGateId', (new URLSearchParams(button.dataset.href.split('?')[1]).get('fangateId')));
+              if (!localStorage.getItem('useAlternate')) {
+                console.info('trigger Comment click for ' + stepLabel);
+                button.click();
+              }
+              else {
+                alternateMethodForPump();
+              }
             }
             window.setTimeout(commentPump, 300);
             break;
@@ -128,31 +180,31 @@
         window.isPumpHandled = true;
       }
     });
+    if (countStepDone === steps.length) {
+      console.info('all steps done. Submit download form');
+      window.setTimeout(() => document.querySelector('#frm-freeDownloadForm').submit(), 1500);
+      return;
+    }
   }
-  console.error(window.location.host);
   if (window.location.host.includes('pumpyoursound.com')) {
     window._pumpUrSoundHandler = pumpUrSoundHandler;
     console.info('Pump your mouth matched');
     const uri = new URL(window.location.href);
-    if (uri.pathname.includes('/f/')){
+    if (uri.pathname.includes('/f/')) {
       console.info('Run pumpUrSoundHandler');
       return pumpUrSoundHandler();
     }
     if (uri.searchParams.has('do') && uri.searchParams.get('do') === 'soundConnectAuth') {
+      // window.close() already loaded into window.load function already. So it's for "some one like me"
       const pumpConnectHandler = function () {
         if (uri.searchParams.has('state') && uri.searchParams.has('code')) {
           console.info('pump connect close in 1.5 sec');
-          sessionStorage.setItem('isPumpConnectDone', '1');
-          window.setTimeout(window.close,  15000);
+          localStorage.setItem('isPumpConnectDone', '1');
+          window.setTimeout(window.close, 15000);
         }
       }
       console.info('Run pumpConnectHandler');
       pumpConnectHandler();
-      // console.warn('handle connect redirected windows');
-      // console.info(sessionStorage.getItem('scConnDialog'));
-      // console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
-      // console.info('pump connect close in 1.5 sec');
-      // window.setTimeout(window.close,  1500);
     }
     // Why return does not prevent execute of "new MutationObserver" ?. I do not understand
     return;
@@ -292,10 +344,9 @@
   }
 
 
-
   const targetNode = document.getElementById("myCarousel")
 
-  const config = { attributes: true, childList: true, subtree: true }
+  const config = {attributes: true, childList: true, subtree: true}
 
   let prevStepContent = null
   const callback = (mutationList, observer) => {
