@@ -5,8 +5,7 @@
 // @description  Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!
 // @author       fan1200, Zuko <tansautn@gmail.com>
 // @match        https://hypeddit.com/*
-// @match        https://pumpyoursound.com/f/*
-// @match        https://pumpyoursound.com/?do=soundConnectAuth*
+// @match        https://pumpyoursound.com/*
 // @match        https://secure.soundcloud.com/connect*
 // @match        https://secure.soundcloud.com/authorize*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hypeddit.com
@@ -49,7 +48,8 @@
           case 'facebook':
             // TODO : use post message API to communicate with child windows.
             // TODO : sessionStorage set value to check the connect process
-            // TODO : facebook and youtube does not require any validation. So just close it's modal
+            // TODO : youtube does not require any validation. So just close it's modal
+            // TODO : facebook need what to mark as done?, are okay when we simulate the form submit?
             window.setTimeout(() => {
               curEl.querySelector('.socBtn').click();
               console.info('trigger click for' + stepLabel);
@@ -58,33 +58,47 @@
           case 'comment':
             let isDomLoaded = false;
             $(document).ready(() => {
+              console.info('dom ready for' + stepLabel);
               isDomLoaded = true
             });
             // FIXME : why addEventListener not work?. Handler event not get called by any thread ?
-            // document.addEventListener('DOMContentLoaded', () => {
-            //   isDomLoaded = true;
-            // });
+            document.addEventListener('DOMContentLoaded', () => {
+              // isDomLoaded = true;
+              console.info('DOMContentLoaded ' + stepLabel);
+
+            });
             const commentPump = () => {
               console.warn(!document.querySelector('#soundcloud-api') || !isDomLoaded, !document.querySelector('#soundcloud-api'), !isDomLoaded);
-              if (!document.querySelector('#soundcloud-api') || !isDomLoaded) {
+              if (!document.querySelector('#soundcloud-api') || !isDomLoaded || !SC) {
                 window.setTimeout(commentPump, 300);
                 console.info('no SC api or dom not ready yet, try in next 200 ms');
                 return;
               }
               curEl.querySelector('input[name="fangate_comment"]').value = window.hypedditSettings.comment;
               const button = curEl.querySelector('.btn.fangatex__sendComment');
-              button.click();
+              // button.click();
               console.info('trigger Comment click for' + stepLabel);
-              // Please don't remove this. Need to consider it later.
-              // const scConn = SC.connect(function () {
-              //   $.nette.ajax({
-              //     url: "/?do=mySoundcloudAccessToken"
-              //   }).success(function (e) {
-              //     console.log(e), accessToken = e, console.log(e), $.nette.ajax({
-              //       url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
-              //     })
-              //   })
-              // });
+              // Please don't remove this. Need to consider as a replacement for click. But later.
+              const scConn = SC.connect(function () {
+                if (condition) {
+                  window.setTimeout(scConn, 300);
+                }
+                if (false){
+                  const t = button;
+                  let accessToken;
+                  $.nette.ajax({
+                    url: "/?do=mySoundcloudAccessToken"
+                  }).success(function (e) {
+                    console.log(e),
+                      accessToken = e,
+                      console.log(e),
+                      $.nette.ajax({
+                        url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
+                      });
+                  });
+                }
+              });
+              console.info(scConn);
               sessionStorage.setItem('scConnDialog', (new URLSearchParams(button.dataset.href.split('?')[1]).get('fangateId')));
             }
             window.setTimeout(commentPump, 300);
@@ -94,19 +108,22 @@
       }
     });
   }
-  window._pumpUrSoundHandler = pumpUrSoundHandler;
-
-  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/f/')) {
-    console.info('Run pumpUrSoundHandler');
-    pumpUrSoundHandler();
-    return;
-  }
-
-  if (window.location.host.includes('pumpyoursound.com') && window.location.href.includes('/soundConnectAuth/')) {
-    console.info(sessionStorage.getItem('scConnDialog'));
-    console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
-    window.close();
-    console.info('pump connect closed');
+  console.error(window.location.host);
+  if (window.location.host.includes('pumpyoursound.com')) {
+    window._pumpUrSoundHandler = pumpUrSoundHandler;
+    console.info('Pump your mouth matched');
+    const uri = new URL(window.location.href);
+    if (uri.pathname.includes('/f/')){
+      console.info('Run pumpUrSoundHandler');
+      return pumpUrSoundHandler();
+    }
+    if (uri.searchParams.has('do') && uri.searchParams.get('do') === 'soundConnectAuth') {
+      console.warn('handle connect redirected windows');
+      console.info(sessionStorage.getItem('scConnDialog'));
+      console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
+      console.info('pump connect close in 1.5 sec');
+      window.setTimeout(window.close,  1500);
+    }
     return;
   }
 
@@ -313,10 +330,12 @@
       }
     }
   }
+  // Fix: TypeError: MutationObserver.observe: Argument 1 is not an object.
+  if (targetNode) {
+    const observer = new MutationObserver(callback)
 
-  const observer = new MutationObserver(callback)
-
-  observer.observe(targetNode, config)
+    observer.observe(targetNode, config)
+  }
 
   const _start = () => {
     if (document.getElementById("downloadProcess") !== null) {
