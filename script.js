@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hypeddit, PumpYourSound DownloadWallBypasser 2k24
 // @namespace    http://tampermonkey.net/
-// @version      2024-07-30
+// @version      1.1-rc51dh
 // @description  Bypass the fangates. Soundcloud and Spotify accounts are mandatory! Please make sure to log them on first before running the script!
 // @author       fan1200, Zuko <tansautn@gmail.com>
 // @match        https://hypeddit.com/*
@@ -14,7 +14,6 @@
 
 ;(function () {
   "use strict"
-
   window.hypedditSettings = {
     email: "jouch@hippo.com",
     name: "Jojo",
@@ -22,6 +21,7 @@
     auto_close: true,
     auto_close_timeout_in_ms: 5000,
   }
+  console.info('work ?');
   const pumpUrSoundHandler = function () {
     const steps = document.querySelectorAll('.fanpageDownload__item');
     if (!window.hasOwnProperty('isPumpHandled')) {
@@ -74,32 +74,53 @@
                 console.info('no SC api or dom not ready yet, try in next 200 ms');
                 return;
               }
+              // sessionStorage.removeItem('scConnDialog');
+              sessionStorage.removeItem('isPumpConnectDone');
               curEl.querySelector('input[name="fangate_comment"]').value = window.hypedditSettings.comment;
               const button = curEl.querySelector('.btn.fangatex__sendComment');
               // button.click();
               console.info('trigger Comment click for' + stepLabel);
               // Please don't remove this. Need to consider as a replacement for click. But later.
-              const scConn = SC.connect(function () {
-                if (condition) {
-                  window.setTimeout(scConn, 300);
-                }
-                if (false){
-                  const t = button;
-                  let accessToken;
-                  $.nette.ajax({
-                    url: "/?do=mySoundcloudAccessToken"
-                  }).success(function (e) {
-                    console.log(e),
-                      accessToken = e,
-                      console.log(e),
+              const scConn = () => {
+                const val = SC.connect(function () {
+                  console.info('on callback for connect', this, arguments);
+                  let doneCond = sessionStorage.getItem('isPumpConnectDone');
+                  if (!doneCond) {
+                    window.setTimeout(scConn, 300);
+                  }
+                  if (doneCond){
+                    const t = button;
+                    let accessToken;
+                    // Taken from Pump's main.js
+                    $.nette.ajax({
+                      url: "/?do=mySoundcloudAccessToken"
+                    }).success(function (e) {
+                      console.log(e);
+                      accessToken = e;
+                      console.log(e);
                       $.nette.ajax({
                         url: t.attr("data-href").replace("accessToken=access_token", "accessToken=" + accessToken)
                       });
-                  });
-                }
-              });
+                      console.error('doneeeee');
+                    });
+                    sessionStorage.removeItem('isPumpConnectDone');
+                  }
+                });
+              };
               console.info(scConn);
-              sessionStorage.setItem('scConnDialog', (new URLSearchParams(button.dataset.href.split('?')[1]).get('fangateId')));
+              let itvId = window.setInterval(() => {
+                let doneCond = sessionStorage.getItem('isPumpConnectDone');
+                console.info('doneCond interval', doneCond);
+                if (doneCond) {
+                  console.info('call connect callback');
+                  SC.connectCallback();
+                  clearInterval(itvId);
+                  console.info('remove doneCond', doneCond);
+                  return;
+                }
+              }, 500);
+              // sessionStorage.setItem('scConnDialog', scConn.id);
+              sessionStorage.setItem('pumpFanGateId', (new URLSearchParams(button.dataset.href.split('?')[1]).get('fangateId')));
             }
             window.setTimeout(commentPump, 300);
             break;
@@ -118,12 +139,22 @@
       return pumpUrSoundHandler();
     }
     if (uri.searchParams.has('do') && uri.searchParams.get('do') === 'soundConnectAuth') {
-      console.warn('handle connect redirected windows');
-      console.info(sessionStorage.getItem('scConnDialog'));
-      console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
-      console.info('pump connect close in 1.5 sec');
-      window.setTimeout(window.close,  1500);
+      const pumpConnectHandler = function () {
+        if (uri.searchParams.has('state') && uri.searchParams.has('code')) {
+          console.info('pump connect close in 1.5 sec');
+          sessionStorage.setItem('isPumpConnectDone', '1');
+          window.setTimeout(window.close,  15000);
+        }
+      }
+      console.info('Run pumpConnectHandler');
+      pumpConnectHandler();
+      // console.warn('handle connect redirected windows');
+      // console.info(sessionStorage.getItem('scConnDialog'));
+      // console.info(window.location.href.includes(sessionStorage.getItem('scConnDialog')));
+      // console.info('pump connect close in 1.5 sec');
+      // window.setTimeout(window.close,  1500);
     }
+    // Why return does not prevent execute of "new MutationObserver" ?. I do not understand
     return;
   }
 
