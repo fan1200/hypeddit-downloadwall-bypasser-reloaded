@@ -155,6 +155,11 @@
         document.getElementById("donation_next").click()
     }
 
+    window.handleMixcloud = function () {
+        console.log("Mixcloud")
+        document.getElementById("skipper_mc").click()
+    }    
+
     const targetNode = document.getElementById("myCarousel")
 
     const config = { attributes: true, childList: true, subtree: true }
@@ -216,6 +221,10 @@
 
                     if (stepClassList.contains("fb")) {
                         window.handleFacebook()
+                    }
+                    
+                    if (stepClassList.contains("mc")) {
+                        window.handleMixcloud()
                     }
                 }
 
