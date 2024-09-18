@@ -337,6 +337,12 @@
     document.getElementById("step_yt").previousElementSibling.click()
     window.handleYoutube()
   }
+    window.handleMixcloud = function () {
+        console.log("Mixcloud")
+        document.getElementById("skipper_mc").click()
+    }    
+
+    const targetNode = document.getElementById("myCarousel")
 
   window.handleDonate = function () {
     document.getElementById("step_dn").previousElementSibling.click()
@@ -394,6 +400,15 @@
           if (stepClassList.contains("sp")) {
             window.handleSpotify()
           }
+
+                    if (stepClassList.contains("fb")) {
+                        window.handleFacebook()
+                    }
+                    
+                    if (stepClassList.contains("mc")) {
+                        window.handleMixcloud()
+                    }
+                }
 
           if (stepClassList.contains("email")) {
             window.handleEmail()
