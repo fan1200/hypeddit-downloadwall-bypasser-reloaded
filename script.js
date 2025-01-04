@@ -97,7 +97,7 @@
 
     window.handleDownload = function () {
         console.log("DOWNLOAD")
-        downloadUnlimitedGate()
+        document.getElementById("gateDownloadButton").click()
 
         if (window.hypedditSettings.auto_close) {
             const timeout = window.hypedditSettings.auto_close_timeout_in_ms
