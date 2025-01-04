@@ -160,6 +160,10 @@
         document.getElementById("skipper_mc").click()
     }    
 
+    window.handleBandCamp = function() {
+        document.getElementById("skipper_bc").click()
+    }
+    
     const targetNode = document.getElementById("myCarousel")
 
     const config = { attributes: true, childList: true, subtree: true }
@@ -225,6 +229,10 @@
                     
                     if (stepClassList.contains("mc")) {
                         window.handleMixcloud()
+                    }
+
+                    if(stepClassList.contains("bc")) {
+                       window.handleBandCamp()
                     }
                 }
 
