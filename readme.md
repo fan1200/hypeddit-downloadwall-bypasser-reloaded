@@ -11,10 +11,10 @@ To use this script effectively, users must ensure the following:
 This script can be used on Hypeddit's website to bypass download gates encountered when attempting to download tracks. It targets specific URLs related to Hypeddit tracks and SoundCloud login pages, ensuring seamless navigation through the download process.
 
 ## Installation:
-1. Install a userscript manager extension like Tampermonkey for your browser.
-2. Create a new userscript.
-3. Copy and paste the script code provided above into the userscript editor.
-4. Save the script, ensuring that it is enabled.
+1. Download the repository from https://github.com/malakutska/hypeddit-downloadwall-bypasser-reloaded.
+2. Unpack the contents.
+3. Go to "Extensions" in Chrome settings.
+4. Load the unpacked folder.
 5. Visit a Hypeddit track page and let the script automatically bypass the download gates.
 
 **Note**: Always exercise caution when running userscripts from unknown sources.
