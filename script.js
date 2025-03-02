@@ -179,6 +179,10 @@
                 if (stepContent !== prevStepContent) {
                     const stepClassList = stepContent.classList
 
+                    if (stepClassList.contains("tk|ig")) {
+                        window.handleTikTok()
+                    }                    
+
                     if (stepClassList.contains("sp|ig|email")) {
                         window.handleMultiPortal()
                     }
